@@ -32,7 +32,7 @@ public:
 };
 
 
-void f(std::unique_ptr<int> val)
+void f(std::unique_ptr<int> val, int, float)
 {
     QThread::sleep(3);
     qDebug() << "unique = " << *val;
@@ -85,7 +85,8 @@ int main(int argc, char** argv)
     {
         const int value = 777;
         std::unique_ptr<int> uniqueVal(new int(value ));
-        pool.submit([val = std::move(uniqueVal)]{f(SUPER_MOVE(val));});
+        // mutable to val to be a non-const reference
+        pool.submit([val = std::move(uniqueVal)](auto&&...args)mutable{f(std::move(val), std::forward<decltype (args)>(args)...);}, 1, 2.0);
     }
 
     // Add a lambda to task queue
@@ -103,6 +104,8 @@ int main(int argc, char** argv)
     qDebug() << "max-min = " << result.get();
 
     qDebug() << "changed str = " << str;
+
+    qDebug() << "THE END";
 
     return a.exec();
 }
